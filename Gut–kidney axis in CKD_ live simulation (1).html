@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gut–kidney axis in CKD: live simulation</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#EDF1F0;--panel:#F8FAF9;--ink:#1E2A32;--mute:#5B6B73;--line:#CBD6D9;--lum:#E3EBF0;--muc:#D2DEE4;--cell:#F0C9A4;--cellS:#C99A72;--lam:#F3E7E4;--ves:#E39A92;--vesS:#B8625A;--path:#5266A8;--sym:#C8A79D;--lps:#D6453D;--tox:#B58A2A;--cyt:#5E7CE0;--mac:#8DBFA8;--acc:#1F6F78;--pro:#6FAE4A;--anti:#2E9A6A;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12181C;--panel:#1A2227;--ink:#E6EDF0;--mute:#93A3AB;--line:#2D3A41;--lum:#18242B;--muc:#1F313A;--cell:#8A6247;--cellS:#B08460;--lam:#2A2024;--ves:#6E2F2C;--vesS:#A5504A;--path:#8FA2E8;--sym:#B99A90;--lps:#FF6B5F;--tox:#E0B24A;--cyt:#86A0FF;--mac:#3F7A63;--acc:#5CC2CC;--pro:#8FD16A;--anti:#5CC79A}}
+:root[data-theme="dark"]{--bg:#12181C;--panel:#1A2227;--ink:#E6EDF0;--mute:#93A3AB;--line:#2D3A41;--lum:#18242B;--muc:#1F313A;--cell:#8A6247;--cellS:#B08460;--lam:#2A2024;--ves:#6E2F2C;--vesS:#A5504A;--path:#8FA2E8;--sym:#B99A90;--lps:#FF6B5F;--tox:#E0B24A;--cyt:#86A0FF;--mac:#3F7A63;--acc:#5CC2CC;--pro:#8FD16A;--anti:#5CC79A}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Figtree',system-ui,sans-serif;line-height:1.45}
+.wrap{max-width:1040px;margin:0 auto;padding:18px 14px 40px}
+h1{font-size:clamp(1.4rem,3.4vw,2rem);font-weight:800;margin:4px 0 2px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 14px;max-width:62ch}
+canvas{width:100%;height:auto;aspect-ratio:960/520;display:block;border-radius:14px;border:1px solid var(--line);background:var(--lum)}
+.read{margin:12px 0;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:8px;min-height:3em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.box h2{font-size:1rem;margin:0 0 10px}
+.ctl{margin-bottom:12px}.ctl label{display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}
+.ctl small{display:block;color:var(--mute);font-size:.8rem}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+button{font:inherit;font-weight:600;font-size:.88rem;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--acc)}button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.g{margin-bottom:9px}.g .t{display:flex;justify-content:space-between;font-size:.88rem}
+.bar{height:9px;border-radius:5px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;width:0;border-radius:5px;transition:width .25s}
+.ex .d{margin-bottom:13px;font-size:.9rem}.ex .d b{display:block;font-size:.92rem}.ex .d em{font-style:normal;display:inline-block;margin-top:4px;padding:1px 8px;border-radius:10px;background:var(--bg);border:1px solid var(--line);font-size:.8rem;font-weight:600}#log{margin:0;padding-left:18px;font-size:.88rem}#log li{margin-bottom:10px}#log small{display:block;color:var(--mute)}
+.leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--mute);margin-top:10px}
+.leg b{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Gut–kidney axis in CKD</h1>
+<p class="sub">Change the four drivers from the top of the diagram and watch the barrier, microbiota, endotoxin, macrophage and vascular signals respond in real time.</p>
+<canvas id="c" role="img" aria-label="Animated cross-section of the gut wall showing bacteria, lipopolysaccharide, uremic toxins and cytokines"></canvas>
+<div class="read" id="read" aria-live="polite"></div>
+<div class="grid">
+<div class="box">
+<h2>Drivers</h2>
+<div class="btns">
+<button data-p="0,.8,0,0">Healthy</button>
+<button data-p=".35,.5,.2,0">Early CKD</button>
+<button data-p=".85,.2,.7,.4">Advanced CKD</button>
+<button data-p=".85,.9,.15,0">Advanced, treated</button>
+<button data-p=".85,.2,.7,.4,.9">Advanced + probiotics</button>
+<button data-p=".85,.9,.15,0,.9">Treated + probiotics</button>
+<button id="pause">Pause</button>
+</div>
+<div class="ctl"><label for="ckd">Kidney function lost <span id="v_ckd"></span></label><input id="ckd" type="range" min="0" max="100" value="0"><small>Raises gut urea, ammonium, uremic-toxin retention</small></div>
+<div class="ctl"><label for="fiber">Fiber intake <span id="v_fiber"></span></label><input id="fiber" type="range" min="0" max="100" value="80"><small>Feeds symbionts that make short-chain fatty acids</small></div>
+<div class="ctl"><label for="acid">Metabolic acidosis <span id="v_acid"></span></label><input id="acid" type="range" min="0" max="100" value="0"><small>Weakens the epithelium and shifts the microbiota</small></div>
+<div class="ctl"><label for="abx">Antibiotics, binders, antimetabolites <span id="v_abx"></span></label><input id="abx" type="range" min="0" max="100" value="0"><small>Depletes symbionts and lets pathobionts expand</small></div>
+<div class="ctl"><label for="probio">Probiotics <span id="v_probio"></span></label><input id="probio" type="range" min="0" max="100" value="0"><small>Compete with pathobionts, make SCFA, calm macrophages, raise Tregs and IgA</small></div>
+</div>
+<div class="box">
+<h2>Readouts</h2>
+<div id="gauges"></div>
+<div class="leg"><span><b style="background:var(--path)"></b>Pathobiont</span><span><b style="background:var(--sym)"></b>Symbiont</span><span><b style="background:var(--lps)"></b>LPS</span><span><b style="background:var(--cyt)"></b>Cytokine</span><span><b style="background:var(--tox)"></b>Uremic toxin</span><span><b style="background:var(--pro)"></b>Probiotic</span><span><b style="background:var(--anti)"></b>IL-10 / TGF-β</span></div>
+</div>
+</div>
+<div class="grid" style="margin-top:14px">
+<div class="box"><h2>What each driver is doing now</h2><div class="ex" id="ex"></div></div>
+<div class="box"><h2>What your last changes did</h2><p class="sub" style="font-size:.82rem;margin-bottom:8px">Move a slider or pick a preset. Values show where each readout settles.</p><ol id="log"></ol></div>
+</div>
+</div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d'),W=960,H=520;
+function fit(){const d=Math.min(window.devicePixelRatio||1,2);cv.width=W*d;cv.height=H*d;ctx.setTransform(d,0,0,d,0,0)}fit();
+const $=id=>document.getElementById(id),cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),R=Math.random;
+let col={};function readCols(){const s=getComputedStyle(document.documentElement);['lum','muc','cell','cellS','lam','ves','vesS','path','sym','lps','tox','cyt','mac','ink','mute','line','acc','pro','anti'].forEach(k=>col[k]=s.getPropertyValue('--'+k).trim())}readCols();
+const inp={ckd:0,fiber:.8,acid:0,abx:0,probio:0};
+['ckd','fiber','acid','abx','probio'].forEach(k=>{const e=$(k);const u=()=>{inp[k]=e.value/100;$('v_'+k).textContent=k==='ckd'?'eGFR ≈ '+Math.round(100-95*inp.ckd):e.value+'%'};e.oninput=u;u()});
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{const v=b.dataset.p.split(',').map(Number);['ckd','fiber','acid','abx','probio'].forEach((k,i)=>{$(k).value=(v[i]||0)*100;$(k).dispatchEvent(new Event('input'))})});
+let paused=false;$('pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume':'Pause'};
+const S={P:.15,B:1,SC:.7,L:0,M:0,C:0,T:0,K:0,TR:0,AM:0,BA:0};
+function tgt(i=inp){const{ckd,fiber,acid,abx,probio}=i;
+const D=cl(.5*ckd+.3*(1-fiber)+.25*acid+.25*abx-.45*probio);const P=cl(.08+.85*D,0,.93);
+const SC=cl((1-P)*(.3+.7*fiber)+.2*probio);const B=cl(1-.3*ckd-.4*(1-SC)-.15*acid+.15*probio,.08,1);
+const T=cl(P*(.3+.7*ckd)*(.6+.4*(1-B))*1.5*(1-.4*probio));const L=cl(P*(1-B)*1.6);const TR=cl(SC*(.5+.5*probio)-.3*L);const AM=cl((.2+.65*probio)*(1-.3*ckd));const BA=cl(.4*SC+.6*probio*(.5+.5*SC));const M=cl(L*1.3*(1-.4*probio*SC));const C=cl(M*.9*(1-.35*TR*probio));
+return{P,SC,B,T,L,M,C,TR,AM,BA,K:cl(.4*C+.35*T+.25*L)}}
+const bac=[...Array(16)].map(()=>({x:60+R()*740,y:30+R()*160,a:R()*6.28,r:R(),ph:R()*6}));
+const pro=[...Array(10)].map(()=>({x:60+R()*740,y:30+R()*160,a:R()*6.28}));
+let parts=[],blood=[],macHit=0,t=0;
+const MAC={x:300,y:372},TC={x:640,y:365};
+function pathBac(){const a=bac.filter(b=>b.r<S.P);return a.length?a[Math.floor(R()*a.length)]:null}
+function toward(p,tx,ty,sp){const dx=tx-p.x,dy=ty-p.y,d=Math.hypot(dx,dy)||1;p.x+=dx/d*sp;p.y+=dy/d*sp;return d}
+function step(){t++;
+const g=tgt();for(const k in S)S[k]+=(g[k]-S[k])*.03;
+bac.forEach(b=>{b.a+=(R()-.5)*.25;b.x+=Math.cos(b.a)*.5;b.y+=Math.sin(b.a)*.4;if(b.x<50||b.x>810)b.a=Math.PI-b.a;if(b.y<30||b.y>190)b.a=-b.a;b.x=cl(b.x,45,815);b.y=cl(b.y,28,192)});
+pro.forEach(b=>{b.a+=(R()-.5)*.25;b.x+=Math.cos(b.a)*.5;b.y+=Math.sin(b.a)*.4;if(b.x<50||b.x>810)b.a=Math.PI-b.a;if(b.y<30||b.y>190)b.a=-b.a;b.x=cl(b.x,45,815);b.y=cl(b.y,28,192)});
+if(R()<S.P*.3){const b=pathBac();if(b)parts.push({t:'l',x:b.x,y:b.y+6,vx:(R()-.5)*.3,vy:.5+R()*.3,pass:R()<Math.pow(1-S.B,1.1)*1.3,a:1,st:0,mac:R()<.55,jx:cl(30+100*Math.round((b.x-30)/100),130,730)})}
+if(R()<S.P*.22){const b=pathBac();if(b)parts.push({t:'x',x:b.x,y:b.y+6,vx:(R()-.5)*.2,vy:.6+R()*.3,pass:R()<.25+.7*(1-S.B),a:1,st:0})}
+if(R()<S.M*.45)parts.push({t:'c',x:MAC.x+(R()-.5)*50,y:MAC.y-30,tx:60+R()*740,a:1});
+if(R()<S.M*.2)parts.push({t:'c',x:TC.x,y:TC.y+18,tx:60+R()*740,a:1});
+if(R()<S.TR*inp.probio*.3)parts.push({t:'a',x:TC.x+(R()-.5)*20,y:TC.y-20,tx:40+R()*780,a:1});
+macHit*=.985;
+parts=parts.filter(p=>{
+if(p.t==='l'){if(p.st===0){p.x+=p.vx;p.y+=p.vy;if(!p.pass){if(p.y>212){p.a-=.03;p.vy*=.9}}else{if(p.y>170)p.x+=(p.jx-p.x)*.08;if(p.y>300)p.st=1}}
+else{const tg=p.mac?MAC:{x:p.x,y:450};const d=toward(p,tg.x,p.mac?tg.y-30:450,1.3);if(p.mac&&d<26){macHit=Math.min(1,macHit+.08);return false}if(p.y>=445)return false}return p.a>0}
+if(p.t==='x'){p.x+=p.vx;p.y+=p.vy;if(!p.pass&&p.y>212){p.a-=.03;p.vy*=.9}return p.a>0&&p.y<445}
+if(p.t==='c'){toward(p,p.tx,450,.9);p.x+=Math.sin(t*.1+p.tx)*.3;return p.y<446}if(p.t==='a'){toward(p,p.tx,300,.8);if(p.y<=302)p.a-=.05;return p.a>0}return false});
+const want={l:S.L*26,c:S.C*30,x:S.T*34,a:S.TR*inp.probio*18};
+['l','c','x','a'].forEach(k=>{const n=blood.filter(b=>b.t===k).length;if(n<want[k]&&R()<.25)blood.push({t:k,x:32,y:456+R()*32,ph:R()*6,sp:.8+R()*.6})});
+blood=blood.filter(b=>{b.x+=b.sp;return b.x<828})}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function drawBac(b){const p=b.r<S.P;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);
+if(p){ctx.strokeStyle=col.path;ctx.lineWidth=1.2;ctx.beginPath();for(let i=0;i<=16;i++){const x=-12-i*1.6,y=Math.sin(i*.9+t*.2+b.ph)*3;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke();ctx.fillStyle=col.path;ctx.beginPath();ctx.ellipse(0,0,13,5,0,0,6.3);ctx.fill();ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(-7,-2,8,1.5)}
+else{ctx.fillStyle=col.sym;ctx.beginPath();ctx.ellipse(0,0,15,7,0,0,6.3);ctx.fill();ctx.strokeStyle='rgba(0,0,0,.15)';ctx.stroke()}ctx.restore()}
+function dot(x,y,r,c,a=1){ctx.globalAlpha=a;ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,6.3);ctx.fill();ctx.globalAlpha=1}
+function tri(x,y,c,a=1){ctx.globalAlpha=a;ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(x,y-5);ctx.lineTo(x+5,y+4);ctx.lineTo(x-5,y+4);ctx.fill();ctx.globalAlpha=1}
+function ell(x,y,c,a){ctx.globalAlpha=a;ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,5,3,0,0,6.3);ctx.fill();ctx.globalAlpha=1}
+function drawPro(){const pb=inp.probio;if(pb<.03)return;
+pro.forEach((b,i)=>{const a=cl(pb*10-i,0,1);if(a<=0)return;
+ctx.save();ctx.globalAlpha=a;ctx.translate(b.x,b.y);ctx.rotate(b.a);rr(-14,-5,28,10,5);ctx.fillStyle=col.pro;ctx.fill();ctx.restore();
+let best=null,bd=170;bac.forEach(q=>{if(q.r<S.P){const d=Math.hypot(q.x-b.x,q.y-b.y);if(d<bd){bd=d;best=q}}});
+if(best){const an=Math.atan2(best.y-b.y,best.x-b.x),cx=best.x-Math.cos(an)*15,cy=best.y-Math.sin(an)*15,px=-Math.sin(an)*7,py=Math.cos(an)*7;ctx.save();ctx.globalAlpha=.55*a;ctx.strokeStyle=col.pro;ctx.lineWidth=1.6;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(cx,cy);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(cx+px,cy+py);ctx.lineTo(cx-px,cy-py);ctx.stroke();ctx.restore()}});
+const k=cl(S.SC*pb*1.2);ctx.fillStyle=col.pro;rr(MAC.x-40,MAC.y+30,16,9,3);ctx.fill();
+ctx.strokeStyle=col.pro;ctx.lineWidth=2;ctx.globalAlpha=k;ctx.beginPath();ctx.moveTo(MAC.x-30,MAC.y+30);ctx.lineTo(MAC.x-10,MAC.y+16);ctx.stroke();ctx.beginPath();ctx.moveTo(MAC.x-6,MAC.y+10);ctx.lineTo(MAC.x-14,MAC.y+22);ctx.stroke();ctx.globalAlpha=1;
+ctx.fillStyle=col.ink;ctx.font='600 11px Figtree,system-ui,sans-serif';ctx.textAlign='right';ctx.fillText('GPR41/43',MAC.x-44,MAC.y+40);
+ctx.strokeStyle=col.anti;ctx.lineWidth=3;ctx.globalAlpha=cl(S.TR*pb*1.5);ctx.beginPath();ctx.arc(TC.x,TC.y,22,0,6.3);ctx.stroke();ctx.globalAlpha=1;ctx.textAlign='center';ctx.fillStyle=col.ink;ctx.fillText('Treg (Foxp3⁺)',TC.x,TC.y+56);
+dot(790,365,22,'#9A6FC2',.2+.6*S.AM);dot(790,365,12,'#9A6FC2',.5+.5*S.AM);ctx.fillStyle=col.ink;ctx.fillText('B cell → IgA',790,365+40);
+ctx.fillStyle='#9A6FC2';ctx.font='700 14px Figtree,system-ui,sans-serif';for(let i=0;i<6;i++){if(i<S.AM*7)ctx.fillText('Y',110+i*130,229)}}
+function draw(){if(t%40===0)readCols();
+ctx.clearRect(0,0,W,H);
+ctx.fillStyle=col.lum;ctx.fillRect(0,0,W,215);
+ctx.fillStyle=col.muc;ctx.fillRect(0,215,W,20);
+ctx.fillStyle=col.lam;ctx.fillRect(0,300,W,140);
+ctx.strokeStyle=col.line;ctx.lineWidth=1;[215,235,300,440].forEach(y=>{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()});
+ctx.fillStyle=col.mute;ctx.font='600 13px Figtree,system-ui,sans-serif';ctx.textAlign='left';
+[['Gut lumen',110],['Mucus',230],['Enterocytes',272],['Lamina propria',370],['Vessels',475]].forEach(l=>ctx.fillText(l[0],846,l[1]));
+ctx.strokeStyle=col.mucS||col.line;ctx.lineWidth=2;ctx.globalAlpha=.15+.7*S.B;
+for(let k=0;k<5;k++){ctx.beginPath();for(let x=20;x<=830;x+=10){const y=225+Math.sin(x*.05+k*1.7+t*.01)*3+(k-2)*1.5;x===20?ctx.moveTo(x,y):ctx.lineTo(x,y)}ctx.stroke()}ctx.globalAlpha=1;
+const gap=2+(1-S.B)*18;
+for(let i=0;i<8;i++){const x=30+100*i+gap/2;rr(x,235,100-gap,65,10);ctx.fillStyle=col.cell;ctx.fill();ctx.strokeStyle=col.cellS;ctx.lineWidth=1.2;ctx.stroke();
+ctx.beginPath();ctx.ellipse(x+(100-gap)/2,274,19,14,0,0,6.3);ctx.fillStyle=col.cellS;ctx.globalAlpha=.55;ctx.fill();ctx.globalAlpha=1;
+ctx.strokeStyle=col.cellS;ctx.lineWidth=1;for(let m=6;m<100-gap-4;m+=6){ctx.beginPath();ctx.moveTo(x+m,235);ctx.lineTo(x+m,230)}ctx.stroke()}
+// vessel
+rr(30,445,800,52,26);ctx.fillStyle=col.ves;ctx.fill();ctx.strokeStyle=col.vesS;ctx.lineWidth=2;ctx.stroke();
+// macrophage
+const act=S.M;ctx.save();ctx.translate(MAC.x,MAC.y);
+ctx.shadowColor=col.lps;ctx.shadowBlur=macHit*26;ctx.beginPath();for(let a=0;a<=6.3;a+=.2){const r=44+Math.sin(a*5+t*.04)*3;a?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r*.82):ctx.moveTo(r,0)}ctx.closePath();ctx.fillStyle=col.mac;ctx.fill();ctx.shadowBlur=0;
+ctx.beginPath();ctx.ellipse(0,4,19,15,0,0,6.3);ctx.fillStyle=col.lps;ctx.globalAlpha=.2+.8*act;ctx.fill();ctx.globalAlpha=1;
+ctx.fillStyle='#E8A33D';ctx.fillRect(-22,-50,7,14);
+ctx.fillStyle=col.ink;ctx.font='600 11px Figtree,system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('NF-κB',0,8);ctx.fillText('TLR4',-10,-56);ctx.fillText('Macrophage',0,64);ctx.restore();
+// T cell
+dot(TC.x,TC.y,26,col.cyt,.1+.25*S.M);dot(TC.x,TC.y,18,col.mac,.9);dot(TC.x,TC.y,7,col.cyt,.3+.7*S.M);
+ctx.fillStyle=col.ink;ctx.font='600 11px Figtree,system-ui,sans-serif';ctx.textAlign='center';ctx.fillText('CD4⁺ T cell',TC.x,TC.y+42);
+bac.forEach(drawBac);drawPro();
+parts.forEach(p=>{if(p.t==='l')dot(p.x,p.y,3.6,col.lps,p.a);else if(p.t==='x')tri(p.x,p.y,col.tox,p.a);else if(p.t==='a')ell(p.x,p.y,col.anti,p.a);else dot(p.x,p.y,3,col.cyt)});
+blood.forEach(b=>{const y=b.y+Math.sin(t*.05+b.ph)*3;if(b.t==='l')dot(b.x,y,3.6,col.lps);else if(b.t==='c')dot(b.x,y,3,col.cyt);else if(b.t==='a')ell(b.x,y,col.anti,1);else tri(b.x,y,col.tox)});
+// ammonium cue
+ctx.fillStyle=col.mute;ctx.font='600 12px Figtree,system-ui,sans-serif';ctx.textAlign='left';
+ctx.fillText('Urea → ammonium '+Math.round(inp.ckd*90*(1-.5*inp.probio))+'%',560,22)}
+const G=[['Pathobiont share',()=>S.P,'path'],['SCFA production',()=>S.SC,'mac'],['Barrier integrity',()=>S.B,'cellS'],['Blood LPS (endotoxemia)',()=>S.L,'lps'],['Macrophage NF-κB',()=>S.M,'lps'],['Pro-inflammatory cytokines',()=>S.C,'cyt'],['Uremic toxins in blood',()=>S.T,'tox'],['Treg tone (IL-10, TGF-β)',()=>S.TR,'anti'],['AMPs and IgA',()=>S.AM,'pro'],['Bile acid / FXR signaling',()=>S.BA,'pro'],['Cardiovascular and infection risk',()=>S.K,'acc']];
+$('gauges').innerHTML=G.map((g,i)=>`<div class="g"><div class="t"><span>${g[0]}</span><span id="gv${i}"></span></div><div class="bar"><i id="gb${i}" style="background:var(--${g[2]})"></i></div></div>`).join('');
+function ui(){G.forEach((g,i)=>{const v=Math.round(g[1]()*100);$('gv'+i).textContent=v+'%';$('gb'+i).style.width=v+'%'});
+let s;if(S.K<.12)s='Balanced gut: symbionts make SCFA, the barrier holds and little LPS or toxin reaches the blood.';
+else{const dr=[['low fiber',1-inp.fiber],['kidney failure',inp.ckd],['acidosis',inp.acid],['antibiotics and binders',inp.abx]].sort((a,b)=>b[1]-a[1])[0][0];
+s=`Main driver: ${dr}. Pathobionts at ${Math.round(S.P*100)}% and barrier at ${Math.round(S.B*100)}% let LPS through; macrophage NF-κB reaches ${Math.round(S.M*100)}%, feeding cytokines into the vessels.`;
+if(S.K>.55)s+=' Systemic risk is high: this is the loop linking CKD to cardiovascular disease and infection.'}
+if(inp.probio>.2)s+=' Probiotics: competing with pathobionts, lifting SCFA, AMPs and Treg IL-10/TGF-β.';$('read').textContent=s}
+const pc=v=>Math.round(v*100)+'%';
+const EX=[['ckd','Kidney function lost',i=>i.ckd<.1?'Kidneys clear urea and gut-derived toxins normally, so little urea reaches the gut.':'Urea leaks into the gut and bacterial urease turns it into ammonium'+(i.ckd>.5?', which raises luminal pH, damages the epithelium and favors pathobionts. ':'. ')+'Toxins from fermentation (phenols, indoles, TMAO) are cleared less in urine, so they build up in blood'+(i.ckd>.6?'. Hypoperfusion also weakens the barrier.':'.'),()=>'Toxins in blood '+pc(S.T)],
+['fiber','Fiber intake',i=>i.fiber>.6?'Symbionts ferment fiber into SCFA, which feed enterocytes, support mucus and keep tight junctions closed.':i.fiber>.3?'Less fiber means less SCFA and slower gut motility, so symbionts lose ground.':'Low fiber slows motility and starves symbionts. The flora shifts to protein fermentation, so SCFA fall while phenols, indoles and TMAO rise.',()=>'SCFA production '+pc(S.SC)],
+['acid','Metabolic acidosis',i=>i.acid<.1?'No acidosis: epithelium and flora are unaffected.':'Acidosis stresses epithelial survival, loosens the tight junctions and shifts the microbiota toward pathobionts.',()=>'Barrier integrity '+pc(S.B)],
+['abx','Antibiotics, binders, antimetabolites',i=>i.abx<.1?'No drug pressure on the flora.':'These drugs deplete symbionts, so pathobionts expand into the vacated niche and shed more LPS.',()=>'Pathobiont share '+pc(S.P)]];
+EX.push(['probio','Probiotics',i=>i.probio<.05?'No probiotic supplementation.':'Probiotic strains compete with pathobionts for nutrients, make SCFA and bile-salt hydrolase (BSH, which lowers TβMCA and releases FXR/FGF15/19 signaling), and cut urease-driven ammonium and toxin production. SCFA engage GPR41/43 on macrophages to damp NF-κB, while DCs favor Foxp3⁺ Tregs releasing IL-10 and TGF-β. B cells add IgA, and AMPs, mucus and tight junctions improve.',()=>'Treg IL-10/TGF-β '+pc(S.TR)+', AMPs and IgA '+pc(S.AM)]);
+function explain(){$('ex').innerHTML=EX.map(e=>`<div class="d"><b>${e[1]} (${e[0]==='ckd'?'eGFR ≈ '+Math.round(100-95*inp.ckd):pc(inp[e[0]])})</b>${e[2](inp)}<br><em id="ee_${e[0]}">${e[3]()}</em></div>`).join('')}
+let prev={...inp},logs=[],lt;
+const LB={ckd:'Kidney function lost',fiber:'Fiber',acid:'Acidosis',abx:'Antibiotics/binders',probio:'Probiotics'};
+function logChange(){const ch=Object.keys(LB).filter(k=>Math.abs(inp[k]-prev[k])>.01);if(!ch.length)return;const a=tgt(prev),b=tgt(inp);
+const ef=[['pathobionts','P'],['barrier','B'],['blood LPS','L'],['cytokines','C'],['toxins','T'],['Treg tone','TR'],['risk','K']].filter(x=>Math.abs(b[x[1]]-a[x[1]])>=.02).map(x=>`${x[0]} ${pc(a[x[1]])} → ${pc(b[x[1]])}`);
+logs.unshift({h:ch.map(k=>`${LB[k]} ${pc(prev[k])} → ${pc(inp[k])}`).join(', '),e:ef.length?ef.join(', '):'No major change in the readouts.'});logs=logs.slice(0,6);
+$('log').innerHTML=logs.map(l=>`<li><b>${l.h}</b><small>${l.e}</small></li>`).join('');prev={...inp}}
+['ckd','fiber','acid','abx','probio'].forEach(k=>$(k).addEventListener('input',()=>{explain();clearTimeout(lt);lt=setTimeout(logChange,700)}));
+explain();
+function loop(){if(t%12===0)EX.forEach(e=>{const n=document.getElementById('ee_'+e[0]);if(n)n.textContent=e[3]()});if(!paused){step()}draw();if(t%6===0)ui();requestAnimationFrame(loop)}
+ui();loop();
+</script>
+</body>
+</html>
